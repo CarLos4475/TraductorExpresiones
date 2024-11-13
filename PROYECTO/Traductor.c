@@ -5,7 +5,6 @@
 void traducePostFijo();
 void traducePreFijo();
 
-//PROGRAMA QUE TRADUCE UNA EXPRESION INFIJA A POSTFIJA
 int main(){
     traducePostFijo();
     printf("\n");
@@ -16,24 +15,24 @@ int main(){
 
 void traducePostFijo(){
     Nodo *P = NULL;
-    char ch;
+    char caracter;
     printf("Introduce una expresion infija: ");
     
-    while((ch = getchar()) != '\n'){
-        if(isalnum(ch)){  //COMPRUEBA SI ES UNA LETRA O UN NUMERO
-            printf("%c", ch);
-        }else if(ch == '('){
-            P = push(P, ch);
-        }else if(ch == ')'){
+    while((caracter = getchar()) != '\n'){
+        if(isalnum(caracter)){  
+            printf("%c", caracter);
+        }else if(caracter == '('){
+            P = push(P, caracter);
+        }else if(caracter == ')'){
             while(P->dato != '('){
                 printf("%c", pop(&P));
             }
             pop(&P);
         }else{
-            while(P != NULL && prioridad(P->dato) >= prioridad(ch)){
+            while(P != NULL && prioridad(P->dato) >= prioridad(caracter)){
                 printf("%c", pop(&P));
             }
-            P = push(P, ch);
+            P = push(P, caracter);
         }
     }
     while(P != NULL){
@@ -44,47 +43,47 @@ void traducePostFijo(){
 void traducePreFijo() {
     Nodo *P = NULL;
     char expresion[100];
-    char output[100];
+    char salida[100];
     int i = 0;
-    int outIndex = 0;
+    int indiceSalida = 0;
     
     printf("Introduce una expresion infija: ");
-    char ch;
-    while((ch = getchar()) != '\n' && i < 99) {
-        expresion[i++] = ch;
+    char caracter;
+    while((caracter = getchar()) != '\n' && i < 99) {
+        expresion[i++] = caracter;
     }
     expresion[i] = '\0';
     
     for(int j = i-1; j >= 0; j--) {
-        ch = expresion[j];
-        if(isalnum(ch)) { //COMPRUEBA SI ES UNA LETRA O UN NUMERO
-            output[outIndex++] = ch;
+        caracter = expresion[j];
+        if(isalnum(caracter)) {
+            salida[indiceSalida++] = caracter;
         }
-        else if(ch == ')') {
-            P = push(P, ch);
+        else if(caracter == ')') {
+            P = push(P, caracter);
         }
-        else if(ch == '(') {
+        else if(caracter == '(') {
             while(P != NULL && P->dato != ')') {
-                output[outIndex++] = pop(&P);
+                salida[indiceSalida++] = pop(&P);
             }
             if(P != NULL) {
                 pop(&P);
             }
         }
         else { 
-            while(P != NULL && prioridad(P->dato) > prioridad(ch)) {
-                output[outIndex++] = pop(&P);
+            while(P != NULL && prioridad(P->dato) > prioridad(caracter)) {
+                salida[indiceSalida++] = pop(&P);
             }
-            P = push(P, ch);
+            P = push(P, caracter);
         }
     }
     while(P != NULL) {
-        output[outIndex++] = pop(&P);
+        salida[indiceSalida++] = pop(&P);
     }
-    output[outIndex] = '\0';
+    salida[indiceSalida] = '\0';
 
-    for(int j = outIndex-1; j >= 0; j--) {
-        printf("%c", output[j]);
+    for(int j = indiceSalida-1; j >= 0; j--) {
+        printf("%c", salida[j]);
     }
     printf("\n");
 }
