@@ -1,46 +1,38 @@
 #include "Pila.h"
 #include <stdio.h>
 #include <ctype.h> 
+#include <string.h>
 
-void traducePostFijo();
-void traducePreFijo();
+char* traducePostFijo();
+char* traducePreFijo();
 
 int main(){
-    traducePostFijo();
+    char hola[100];
+    //traducePostFijo();
     printf("\n");
-    traducePreFijo();
+    //traducePreFijo();
+
+    strcpy(hola, traducePostFijo());
+
+    printf("lon: %lu\n",strlen(hola));
+
+    for (int i = 0; i < strlen(hola); i++){
+        printf("%c", hola[i]);
+    }
+
+    printf("\n");
+    revisaVariables(hola);
+
+    for (int i = 0; i < strlen(hola); i++){
+        printf("%c", hola[i]);
+    }
+    printf("\n\n");
+    evaluaExpresion(hola);
 
     return 0;
 }
 
-void traducePostFijo(){
-    Nodo *P = NULL;
-    char caracter;
-    printf("Introduce una expresion infija: ");
-    
-    while((caracter = getchar()) != '\n'){
-        if(isalnum(caracter)){  
-            printf("%c", caracter);
-        }else if(caracter == '('){
-            P = push(P, caracter);
-        }else if(caracter == ')'){
-            while(P->dato != '('){
-                printf("%c", pop(&P));
-            }
-            pop(&P);
-        }else{
-            while(P != NULL && prioridad(P->dato) >= prioridad(caracter)){
-                printf("%c", pop(&P));
-            }
-            P = push(P, caracter);
-        }
-    }
-    while(P != NULL){
-        printf("%c", pop(&P));
-    }
-}
-
-void traducePreFijo() {
+char* traducePostFijo() {
     Nodo *P = NULL;
     char expresion[100];
     char salida[100];
@@ -54,6 +46,53 @@ void traducePreFijo() {
     }
     expresion[i] = '\0';
     
+    for(int j = 0; j < i; j++) {
+        caracter = expresion[j];
+        if(isalnum(caracter)) {
+            salida[indiceSalida++] = caracter;
+        }
+        else if(caracter == '(') {
+            P = push(P, caracter);
+        }
+        else if(caracter == ')') {
+            while(P != NULL && P->dato != '(') {
+                salida[indiceSalida++] = pop(&P);
+            }
+            if(P != NULL) {
+                pop(&P);
+            }
+        }
+        else {
+            while(P != NULL && prioridad(P->dato) >= prioridad(caracter)) {
+                salida[indiceSalida++] = pop(&P);
+            }
+            P = push(P, caracter);
+        }
+    }
+    
+    while(P != NULL) {
+        salida[indiceSalida++] = pop(&P);
+    }
+    salida[indiceSalida] = '\0';
+    
+    return strdup(salida);
+}
+
+char* traducePreFijo() {
+    Nodo *P = NULL;
+    char expresion[100];
+    char salida[100];
+    int i = 0;
+    int indiceSalida = 0;
+    
+    printf("Introduce una expresion infija: ");
+    char caracter;
+    while((caracter = getchar()) != '\n' && i < 99) {
+        expresion[i++] = caracter;
+    }
+    expresion[i] = '\0';
+    
+    // Process from right to left
     for(int j = i-1; j >= 0; j--) {
         caracter = expresion[j];
         if(isalnum(caracter)) {
@@ -71,19 +110,25 @@ void traducePreFijo() {
             }
         }
         else { 
-            while(P != NULL && prioridad(P->dato) > prioridad(caracter)) {
+            while(P != NULL && prioridad(P->dato) >= prioridad(caracter)) {
                 salida[indiceSalida++] = pop(&P);
             }
             P = push(P, caracter);
         }
     }
+    
     while(P != NULL) {
         salida[indiceSalida++] = pop(&P);
     }
     salida[indiceSalida] = '\0';
 
-    for(int j = indiceSalida-1; j >= 0; j--) {
-        printf("%c", salida[j]);
+    // Reverse the string to get prefix notation
+    char temp[100];
+    strcpy(temp, salida);
+    for(int j = 0; j < indiceSalida; j++) {
+        salida[j] = temp[indiceSalida - 1 - j];
     }
-    printf("\n");
+    salida[indiceSalida] = '\0';
+
+    return strdup(salida);
 }
