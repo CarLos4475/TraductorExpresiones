@@ -22,10 +22,10 @@ int main(){
 
     printf("\n");
     revisaVariables(hola);
-
     for (int i = 0; i < strlen(hola); i++){
         printf("%c", hola[i]);
     }
+
     printf("\n\n");
     evaluaExpresion(hola);
 
@@ -48,8 +48,15 @@ char* traducePostFijo() {
     
     for(int j = 0; j < i; j++) {
         caracter = expresion[j];
-        if(isalnum(caracter)) {
-            salida[indiceSalida++] = caracter;
+        if(isalnum(caracter) || caracter == '.') {
+            // Leer todos los digitos consecutivos
+            while(j < i && (isalnum(expresion[j]) || expresion[j] == '.')) {
+                salida[indiceSalida++] = expresion[j];
+                j++;
+            }
+            // Agregar espacio despues de cada operando
+            salida[indiceSalida++] = ' ';
+            j--; // Ajustar j ya que se avanzo uno de mas
         }
         else if(caracter == '(') {
             P = push(P, caracter);
@@ -57,21 +64,24 @@ char* traducePostFijo() {
         else if(caracter == ')') {
             while(P != NULL && P->dato != '(') {
                 salida[indiceSalida++] = pop(&P);
+                salida[indiceSalida++] = ' '; // Agregar espacio despues de cada operador
             }
             if(P != NULL) {
                 pop(&P);
             }
         }
-        else {
+        else if(!isspace(caracter)) { // Ignorar espacios
             while(P != NULL && prioridad(P->dato) >= prioridad(caracter)) {
                 salida[indiceSalida++] = pop(&P);
+                salida[indiceSalida++] = ' '; // Agregar espacio despues de cada operador
             }
             P = push(P, caracter);
         }
     }
     
-    while(P != NULL) {
+    while(P != NULL) {  // Agregar los operadores restantes
         salida[indiceSalida++] = pop(&P);
+        salida[indiceSalida++] = ' ';
     }
     salida[indiceSalida] = '\0';
     
@@ -95,34 +105,47 @@ char* traducePreFijo() {
     // Process from right to left
     for(int j = i-1; j >= 0; j--) {
         caracter = expresion[j];
-        if(isalnum(caracter)) {
-            salida[indiceSalida++] = caracter;
+        if(isalnum(caracter) || caracter == '.') {
+            // Leer todos los digitos consecutivos
+            int start = j;
+            while(j >= 0 && (isalnum(expresion[j]) || expresion[j] == '.')) {
+                j--;
+            }
+            j++; // Ajustar j ya que se decremento uno de mas
+            
+            for(int k = j; k <= start; k++) {
+                salida[indiceSalida++] = expresion[k]; // Agregar operandos
+            }
+            salida[indiceSalida++] = ' '; // Agregar espacio despues de cada operando
         }
         else if(caracter == ')') {
-            P = push(P, caracter);
+            P = push(P, caracter); // Agregar parentesis a la pila
         }
-        else if(caracter == '(') {
-            while(P != NULL && P->dato != ')') {
+        else if(caracter == '(') { 
+            while(P != NULL && P->dato != ')') { 
                 salida[indiceSalida++] = pop(&P);
+                salida[indiceSalida++] = ' '; // Agregar espacio despues de cada operador
             }
             if(P != NULL) {
-                pop(&P);
+                pop(&P); 
             }
         }
-        else { 
+        else if(!isspace(caracter)) {  // Ignorar espacios
             while(P != NULL && prioridad(P->dato) >= prioridad(caracter)) {
                 salida[indiceSalida++] = pop(&P);
+                salida[indiceSalida++] = ' '; 
             }
-            P = push(P, caracter);
+            P = push(P, caracter); 
         }
     }
     
     while(P != NULL) {
         salida[indiceSalida++] = pop(&P);
+        salida[indiceSalida++] = ' ';
     }
     salida[indiceSalida] = '\0';
 
-    // Reverse the string to get prefix notation
+    // Voltear la cadena
     char temp[100];
     strcpy(temp, salida);
     for(int j = 0; j < indiceSalida; j++) {

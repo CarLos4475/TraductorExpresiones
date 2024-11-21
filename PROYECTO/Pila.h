@@ -4,22 +4,22 @@
 #include <string.h>
 
 typedef struct Nodo {
-    int dato;
-    struct Nodo *Liga;
+    float dato;
+    struct Nodo *liga;
 } Nodo;
 
-Nodo *push(Nodo *P, int x){
+Nodo *push(Nodo *pila, float x){
     Nodo *nuevo = (Nodo *)malloc(sizeof(Nodo));
     nuevo->dato = x;
-    nuevo->Liga = P;
+    nuevo->liga = pila;
     return nuevo;
 }
 
-int pop(Nodo **P){
-    Nodo *aux = *P;
-    int x = aux->dato;
-    *P = aux->Liga;
-    free(aux);
+float pop(Nodo **pila){
+    Nodo *auxiliar = *pila;
+    float x = auxiliar->dato;
+    *pila = auxiliar->liga;
+    free(auxiliar);
     return x;
 }
 
@@ -35,61 +35,82 @@ int prioridad(char ch){
     }
 }
 
-void revisaVariables(char *exp){
+void revisaVariables(char *expresion) {
     char aux[100];
-    int auxVal[100];
-    int count = 0,is;
-    for (int i = 0; i < strlen(exp); i++) {
-        if (isalpha(exp[i])) {
-            for (int j = 0; j < count; j++) {
-                if (aux[j] == exp[i]) {
-                    exp[i] = auxVal[j];
-                    is = 1;
+    float valorAux[100];
+    int contador = 0, esta;
+    char temporal[20];
+    char nuevaExp[1000] = "";
+    int nuevoIndice = 0;
+    
+    for (int i = 0; i < strlen(expresion); i++) {
+        if (isalpha(expresion[i])) {
+            esta = 0;
+            for (int j = 0; j < contador; j++) {
+                if (aux[j] == expresion[i]) {
+                    sprintf(temporal, "%f", valorAux[j]);
+                    strcat(nuevaExp, temporal);
+                    nuevoIndice += strlen(temporal);
+                    esta = 1;
+                    break;
                 }
             }
-            if(!is){
-                aux[count] = exp[i];
-                printf("Valor %c: ", exp[i]);
-                scanf(" %c", &exp[i]);
-                auxVal[count] = exp[i];
-                count++;
+            if (!esta) {
+                aux[contador] = expresion[i];
+                printf("Valor %c: ", expresion[i]);
+                scanf("%f", &valorAux[contador]);
+                sprintf(temporal, "%f", valorAux[contador]);
+                strcat(nuevaExp, temporal);
+                nuevoIndice += strlen(temporal);
+                contador++;
             }
+        } else {
+            nuevaExp[nuevoIndice++] = expresion[i];
+            nuevaExp[nuevoIndice] = '\0';
         }
     }
+    strcpy(expresion, nuevaExp);
 }
 
-void evaluaExpresion(char *exp){
-    Nodo *P = NULL;
-    int resultado = 0;
-    for (int i = 0; i < strlen(exp); i++) {
-        if (isdigit(exp[i])) {
-            P = push(P, exp[i] - '0');
-        }else{
-            int op2 = pop(&P);
-            int op1 = pop(&P);
-            switch (exp[i]) {
+void evaluaExpresion(char *expresion){
+    Nodo *pila = NULL; 
+    float resultado = 0; 
+    float numero; 
+    char *ptrFin; // Puntero al final del número
+    
+    for (int i = 0; i < strlen(expresion); ) {
+        if (isdigit(expresion[i]) || expresion[i] == '.') { // Verifica si es un número
+            numero = strtof(&expresion[i], &ptrFin); // Convierte la cadena a un número
+            i = ptrFin - expresion; // Actualiza el índice
+            pila = push(pila, numero); // Agrega el número a la pila
+        } else if (expresion[i] != ' ') { // Verifica si es un operador
+            float operando2 = pop(&pila); // Obtiene el segundo operando
+            float operando1 = pop(&pila); // Obtiene el primer operando
+            switch (expresion[i]) { // Realiza la operación correspondiente
                 case '+':
-                    resultado = op1 + op2;
+                    resultado = operando1 + operando2;
                     break;
                 case '-':
-                    resultado = op1 - op2;
+                    resultado = operando1 - operando2;
                     break;
                 case '*':
-                    resultado = op1 * op2;
+                    resultado = operando1 * operando2;
                     break;
                 case '/':
-                    resultado = op1 / op2;
+                    resultado = operando1 / operando2;
                     break;
                 case '^':
                     resultado = 1;
-                    for(int j = 0; j < op2; j++) {
-                        resultado *= op1;
+                    for(int j = 0; j < (int)operando2; j++) {
+                        resultado *= operando1;
                     }
                     break;
             }
-            P = push(P, resultado);
+            pila = push(pila, resultado); // Agrega el resultado a la pila
+            i++;
+        } else {
+            i++; // Ignora los espacios
         }
     }
-    printf("Resultado: %d\n", pop(&P));
+    printf("Resultado: %f\n", (float)pop(&pila)); // Imprime el resultado
 }
-
