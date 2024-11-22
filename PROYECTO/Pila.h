@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 
+
 typedef struct Nodo {
     float dato;
     struct Nodo *liga;
@@ -24,7 +25,9 @@ float pop(Nodo **pila){
 }
 
 int prioridad(char ch){
-    if(ch == '+' || ch == '-'){
+    if(ch == 's' || ch == 'c' || ch == 't') { 
+        return 4;
+    }else if(ch == '+' || ch == '-'){
         return 1;
     }else if(ch == '*' || ch == '/'){
         return 2;
@@ -44,7 +47,27 @@ void revisaVariables(char *expresion) {
     int nuevoIndice = 0;
     
     for (int i = 0; i < strlen(expresion); i++) {
-        if (isalpha(expresion[i])) {
+        // Detectar funciones trigonométricas
+        if (i + 2 < strlen(expresion) && 
+           ((expresion[i] == 's' && expresion[i+1] == 'e' && expresion[i+2] == 'n') ||
+            (expresion[i] == 'c' && expresion[i+1] == 'o' && expresion[i+2] == 's') ||
+            (expresion[i] == 't' && expresion[i+1] == 'a' && expresion[i+2] == 'n'))) {
+            
+            if (expresion[i] == 's') {
+                strcat(nuevaExp, "sen");
+                nuevoIndice += 3;
+            } else if (expresion[i] == 'c') {
+                strcat(nuevaExp, "cos");
+                nuevoIndice += 3;
+            } else {
+                strcat(nuevaExp, "tan");
+                nuevoIndice += 3;
+            }
+            i += 2; // Saltar resto de la función
+            continue;
+        }
+        // Proceso normal para variables
+        else if (isalpha(expresion[i])) {
             esta = 0;
             for (int j = 0; j < contador; j++) {
                 if (aux[j] == expresion[i]) {
@@ -72,45 +95,91 @@ void revisaVariables(char *expresion) {
     strcpy(expresion, nuevaExp);
 }
 
-void evaluaExpresion(char *expresion){
-    Nodo *pila = NULL; 
-    float resultado = 0; 
-    float numero; 
-    char *ptrFin; // Puntero al final del número
+void evaluaExpresion(char *expresion) {
+    Nodo *pila = NULL;
+    float resultado = 0;
+    char *token = strtok(expresion, " ");
     
-    for (int i = 0; i < strlen(expresion); ) {
-        if (isdigit(expresion[i]) || expresion[i] == '.') { // Verifica si es un número
-            numero = strtof(&expresion[i], &ptrFin); // Convierte la cadena a un número
-            i = ptrFin - expresion; // Actualiza el índice
-            pila = push(pila, numero); // Agrega el número a la pila
-        } else if (expresion[i] != ' ') { // Verifica si es un operador
-            float operando2 = pop(&pila); // Obtiene el segundo operando
-            float operando1 = pop(&pila); // Obtiene el primer operando
-            switch (expresion[i]) { // Realiza la operación correspondiente
-                case '+':
-                    resultado = operando1 + operando2;
-                    break;
-                case '-':
-                    resultado = operando1 - operando2;
-                    break;
-                case '*':
-                    resultado = operando1 * operando2;
-                    break;
-                case '/':
-                    resultado = operando1 / operando2;
-                    break;
-                case '^':
-                    resultado = 1;
-                    for(int j = 0; j < (int)operando2; j++) {
-                        resultado *= operando1;
+    while(token != NULL) {
+        // Si es función trigonométrica
+        if(strncmp(token, "sen", 3) == 0 || 
+           strncmp(token, "cos", 3) == 0 || 
+           strncmp(token, "tan", 3) == 0) {
+            
+            char funcion[4];
+            strncpy(funcion, token, 3);
+            funcion[3] = '\0';
+            
+            token = strtok(NULL, " ");
+            if(token == NULL) {
+                printf("Error: Falta argumento para función trigonométrica\n");
+                return;
+            }
+            
+            float angulo = atof(token);
+            
+            if(strcmp(funcion, "sen") == 0) {
+                resultado = sin(angulo);
+            } else if(strcmp(funcion, "cos") == 0) {
+                resultado = cos(angulo);
+            } else {  // tan
+                resultado = tan(angulo);
+            }
+            pila = push(pila, resultado);
+        }
+        else if(isdigit(token[0]) || token[0] == '.' || (token[0] == '-' && isdigit(token[1]))) {
+            float num = atof(token);
+            pila = push(pila, num);
+        }
+        else if(token[0] == '+' || token[0] == '-' || token[0] == '*' || 
+                token[0] == '/' || token[0] == '^') {
+            if(pila == NULL || pila->liga == NULL) {
+                printf("Error: Faltan operandos\n");
+                return;
+            }
+            float operando2 = pop(&pila);
+            float operando1 = pop(&pila);
+            
+            switch(token[0]) {
+                case '+': resultado = operando1 + operando2; break;
+                case '-': resultado = operando1 - operando2; break;
+                case '*': resultado = operando1 * operando2; break;
+                case '/': 
+                    if(operando2 != 0) {
+                        resultado = operando1 / operando2;
+                    } else {
+                        printf("Error: División por cero\n");
+                        return;
                     }
                     break;
+                case '^': resultado = pow(operando1, operando2); break;
             }
-            pila = push(pila, resultado); // Agrega el resultado a la pila
-            i++;
-        } else {
-            i++; // Ignora los espacios
+            pila = push(pila, resultado);
         }
+        token = strtok(NULL, " ");
     }
-    printf("Resultado: %f\n", (float)pop(&pila)); // Imprime el resultado
+    
+    if(pila != NULL) {
+        resultado = pop(&pila);
+        if(pila != NULL) {
+            printf("Error: Sobran operandos\n");
+            return;
+        }
+        printf("\nResultado: %f\n", resultado);
+    }
+}
+
+char* eliminaEspacios(const char *expresion) {
+    static char resultado[100];
+    char *aux = resultado;
+    
+    while(*expresion) {
+        if(!isspace(*expresion)) {
+            *aux++ = *expresion;
+        }
+        expresion++;
+    }
+    *aux = '\0';
+    
+    return resultado;
 }
